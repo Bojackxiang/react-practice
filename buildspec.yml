@@ -1,0 +1,30 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo pre build ....
+      - aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 786766101582.dkr.ecr.ap-southeast-2.amazonaws.com
+      - REPOSITORY_URI=786766101582.dkr.ecr.ap-southeast-2.amazonaws.com/deploy-practice-ecr
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - echo DMS --- Build started on `date`
+      - echo DMS --- Start npm install .....
+      - npm install 
+      - echo DMS --- Start npm install .....
+      - npm run build
+      - echo DMS --- Building the Docker image...
+      - docker build -t deploy-practice-ecr .
+      - echo DMS --- Tagging the Docker image...
+      - docker tag deploy-practice-ecr:latest 786766101582.dkr.ecr.ap-southeast-2.amazonaws.com/deploy-practice-ecr:latest
+  post_build:
+    commands:
+      - echo Pushing to ECR ...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing image definitions file...
+      - printf '[{"name":"deploy-practice-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+artifacts:
+    files: imagedefinitions.json
