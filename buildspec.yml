@@ -8,16 +8,17 @@ phases:
       - REPOSITORY_URI=786766101582.dkr.ecr.ap-southeast-2.amazonaws.com/deploy-practice-ecr
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - PROJECT_NAME=deploy-practice-container
   build:
     commands:
-      - echo DMS Client --- Build started on `date`
-      - echo DMS Client --- Start npm install .....
+      - echo --- Build started on `date`
+      - echo --- Start npm install .....
       - npm install 
-      - echo DMS Client --- Start npm install .....
+      - echo --- Start npm install .....
       - npm run build
-      - echo DMS Client --- Building the Docker image...
+      - echo --- Building the Docker image...
       - docker build -t $REPOSITORY_URI:latest .
-      - echo DMS Client --- Tagging the Docker image...
+      - echo --- Tagging the Docker image...
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
@@ -25,6 +26,6 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
-      - printf '[{"name":"deploy-practice-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s"}]' $PROJECT_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 artifacts:
     files: imagedefinitions.json
